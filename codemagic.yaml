@@ -1,0 +1,88 @@
+workflows:
+  ios-release:
+    name: iOS Release (Hand)
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.binghanem.hand
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.binghanem.hand"
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Sync Capacitor iOS (copies www -> ios public, runs pod install)
+        script: |
+          node node_modules/@capacitor/cli/bin/capacitor sync ios
+      - name: Generate app icons from app-icon-1024.png (iPhone + marketing)
+        script: |
+          node -e "
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const src = 'app-icon-1024.png';
+            const dir = 'ios/App/App/Assets.xcassets/AppIcon.appiconset';
+            fs.mkdirSync(dir, { recursive: true });
+            const sizes = [
+              ['Icon-40.png',40],['Icon-60.png',60],['Icon-58.png',58],['Icon-87.png',87],
+              ['Icon-80.png',80],['Icon-120.png',120],['Icon-180.png',180],['Icon-1024.png',1024]
+            ];
+            sizes.forEach(([name,size]) => execSync('sips -z '+size+' '+size+' '+src+' --out '+dir+'/'+name));
+            const contents = {
+              images: [
+                {size:'20x20',idiom:'iphone',filename:'Icon-40.png',scale:'2x'},
+                {size:'20x20',idiom:'iphone',filename:'Icon-60.png',scale:'3x'},
+                {size:'29x29',idiom:'iphone',filename:'Icon-58.png',scale:'2x'},
+                {size:'29x29',idiom:'iphone',filename:'Icon-87.png',scale:'3x'},
+                {size:'40x40',idiom:'iphone',filename:'Icon-80.png',scale:'2x'},
+                {size:'40x40',idiom:'iphone',filename:'Icon-120.png',scale:'3x'},
+                {size:'60x60',idiom:'iphone',filename:'Icon-120.png',scale:'2x'},
+                {size:'60x60',idiom:'iphone',filename:'Icon-180.png',scale:'3x'},
+                {size:'1024x1024',idiom:'ios-marketing',filename:'Icon-1024.png',scale:'1x'}
+              ],
+              info: {version:1,author:'xcode'}
+            };
+            fs.writeFileSync(dir+'/Contents.json', JSON.stringify(contents, null, 2));
+            console.log('App icons generated');
+          "
+      - name: Verify iPhone-only (Guideline 4 safety gate)
+        script: |
+          # Hand is iPhone-only. Fail loudly if the project ever targets iPad —
+          # this is the exact regression that got Let's Meet build #82 rejected.
+          if grep -Eq 'TARGETED_DEVICE_FAMILY = "?(1,2|2)"?;' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "FATAL: project targets iPad (TARGETED_DEVICE_FAMILY != 1)"; exit 1
+          fi
+          if ! grep -Eq 'TARGETED_DEVICE_FAMILY = "?1"?;' ios/App/App.xcodeproj/project.pbxproj; then
+            echo "FATAL: TARGETED_DEVICE_FAMILY=1 missing"; exit 1
+          fi
+          grep "TARGETED_DEVICE_FAMILY" ios/App/App.xcodeproj/project.pbxproj
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Set export compliance (no non-exempt encryption)
+        script: |
+          plutil -replace ITSAppUsesNonExemptEncryption -bool NO ios/App/App/Info.plist
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - "**/*.ipa"
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+      email:
+        recipients:
+          - binghanem@gmail.com
+        notify:
+          success: true
+          failure: true
