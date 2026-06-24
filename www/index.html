@@ -34,7 +34,7 @@
     color: var(--text);
     font-family: 'Cairo', sans-serif;
     min-height: 100vh;
-    padding: 0 calc(16px + env(safe-area-inset-right)) 160px calc(16px + env(safe-area-inset-left));
+    padding: 0 calc(16px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
     max-width: 480px;
     margin: 0 auto;
     -webkit-user-select: none;
@@ -454,23 +454,40 @@
     font-family: 'Cairo', sans-serif; cursor: pointer;
   }
 
-  /* ── QUICK ENTRY BAR ── */
+  /* ── QUICK ENTRY BAR (normal in-flow card, sits below game content) ── */
   .quick-bar {
     display: none;
-    position: fixed;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%; max-width: 480px;
+    width: 100%;
     background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 10px 14px calc(22px + env(safe-area-inset-bottom));
-    z-index: 150;
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 14px;
+    margin-top: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
   .quick-bar.visible { display: block; }
   /* Score bar belongs only to the game screen — never overlay settings/winner */
   #settings-screen.active ~ .quick-bar,
   #winner-screen.active ~ .quick-bar { display: none !important; }
+
+  /* ── ARABIC (RTL) TYPE FIXES ──
+     Mono font + letter-spacing breaks Arabic letter-joining and renders tiny.
+     For RTL: use Cairo, drop letter-spacing, and make titles bigger & bolder. */
+  [dir="rtl"] .card-title,
+  [dir="rtl"] .round-label,
+  [dir="rtl"] .quick-bar-label,
+  [dir="rtl"] .settings-col-labels span,
+  [dir="rtl"] .scoreboard-header span {
+    font-family: 'Cairo', sans-serif;
+    letter-spacing: 0;
+  }
+  [dir="rtl"] .card-title {
+    font-size: 15px; font-weight: 700; opacity: 1; text-transform: none;
+  }
+  [dir="rtl"] .round-label   { font-size: 13px; font-weight: 600; text-transform: none; }
+  [dir="rtl"] .quick-bar-label { font-size: 14px; font-weight: 700; text-transform: none; }
+  [dir="rtl"] .settings-col-labels span { font-size: 12px; font-weight: 700; }
+  [dir="rtl"] .scoreboard-header span    { font-size: 12px; font-weight: 600; }
   .quick-bar-label {
     font-size: 10px; color: var(--muted);
     font-family: 'IBM Plex Mono', monospace;
