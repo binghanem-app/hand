@@ -5,6 +5,9 @@ workflows:
     integrations:
       app_store_connect: Codemagic
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.binghanem.hand
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -54,20 +57,7 @@ workflows:
             echo "FATAL: TARGETED_DEVICE_FAMILY=1 missing"; exit 1
           fi
           grep "TARGETED_DEVICE_FAMILY" ios/App/App.xcodeproj/project.pbxproj
-      - name: Initialize keychain
-        script: keychain initialize
-      - name: Fetch or create App Store signing files (creates the profile if missing)
-        script: |
-          # Explicit code signing — unlike the `ios_signing` environment block,
-          # this CREATES the provisioning profile for a brand-new bundle ID instead
-          # of only fetching an existing one. Reuses an existing distribution
-          # certificate when available (the same one Let's Meet signs with).
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-      - name: Add signing certificate to keychain
-        script: keychain add-certificates
-      - name: Apply provisioning profiles to the Xcode project
+      - name: Set up code signing (uses uploaded cert + provisioning profile)
         script: xcode-project use-profiles
       - name: Set build number
         script: |
