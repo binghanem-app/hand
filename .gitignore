@@ -13,3 +13,7 @@ xcuserdata/
 # Misc
 .DS_Store
 *.log
+
+# Packaged web app for manual hosting
+hand-web.zip
+*.zip
