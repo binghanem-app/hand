@@ -1,0 +1,12 @@
+{
+  "appId": "com.binghanem.hand",
+  "appName": "Hand",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#f0ebe0"
+  },
+  "server": {
+    "iosScheme": "https"
+  }
+}

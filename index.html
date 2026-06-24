@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hand — Score Keeper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Cairo:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #f0ebe0;
+    --surface: #ffffff;
+    --border:  #d8d0bc;
+    --accent:  #1b5e3b;
+    --accent2: #2d7a52;
+    --red:     #be3a2a;
+    --green:   #1b5e3b;
+    --text:    #1a1612;
+    --muted:   #8a7a68;
+    --radius:  10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    min-height: 100vh;
+    padding: 0 16px 160px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  body::before {
+    content: '♠  ♥  ♦  ♣';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    font-size: 120px;
+    color: rgba(26,92,56,0.04);
+    pointer-events: none;
+    letter-spacing: 20px;
+    white-space: nowrap;
+    z-index: -1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-suits {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 3px;
+  }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .icon-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 11px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .icon-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(27,94,59,0.08); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .card-title {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    opacity: 0.85;
+  }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 15px;
+    font-family: 'Cairo', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+    box-shadow: 0 2px 8px rgba(27,94,59,0.25);
+  }
+  .btn-primary:hover { background: var(--accent2); }
+
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(27,94,59,0.07); }
+
+  .btn-confirm {
+    flex: 1;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 6px rgba(27,94,59,0.2);
+  }
+  .btn-confirm:hover { background: var(--accent2); }
+
+  .btn-undo {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 16px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-undo:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1.5px solid var(--red);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--red);
+    font-size: 13px;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(190,58,42,0.08); }
+
+  /* ── SETUP ── */
+  .player-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .player-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #ffffff;
+    font-family: 'IBM Plex Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  /* ── SCOREBOARD ── */
+  .scoreboard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+
+  .scoreboard-header {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--accent);
+    padding: 10px 12px;
+  }
+
+  .scoreboard-header span {
+    font-size: 11px; color: #ffffff;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 1px; text-align: center;
+    text-transform: uppercase;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .scoreboard-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 14px 12px;
+  }
+
+  .score-cell { text-align: center; }
+
+  .bike-icon {
+    display: block;
+    font-size: 15px;
+    line-height: 1;
+    margin-bottom: 3px;
+    animation: bike-ride 0.8s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes bike-ride {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50%       { transform: translateY(-4px) rotate(2deg); }
+  }
+  .score-name { font-size: 12px; font-weight: 600; color: var(--muted); display: block; }
+  .score-total {
+    font-size: 22px; font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    display: block; margin-top: 2px;
+  }
+  .score-total.negative { color: var(--green); }
+  .score-total.positive { color: var(--red); }
+  .score-total.zero     { color: var(--muted); }
+
+  /* ── ROUND PROGRESS ── */
+  .round-badge {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 6px 2px; margin-bottom: 12px;
+  }
+  .round-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .round-num   { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); }
+  .round-dots  { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; max-width: 160px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .dot.done    { background: var(--accent); }
+  .dot.current { background: var(--accent2); box-shadow: 0 0 5px rgba(27,94,59,0.5); }
+
+  /* ── SELECTORS ── */
+  .player-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+
+  .player-btn {
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 12px 10px;
+    color: var(--text); font-size: 15px;
+    font-family: 'Cairo', sans-serif; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .player-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .player-btn.selected { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+  .player-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .hand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .hand-btn {
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 10px 8px;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .hand-btn:hover { border-color: var(--accent); }
+  .hand-btn.selected { border-color: var(--accent); background: rgba(27,94,59,0.07); }
+  .hand-name { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
+  .hand-btn.selected .hand-name { color: var(--accent); }
+  .hand-score { display: block; font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+
+  .finish-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .finish-btn {
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 12px 10px;
+    color: var(--muted); font-size: 13px;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .finish-btn:hover { border-color: var(--accent); color: var(--text); }
+  .finish-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(27,94,59,0.07); }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  .confirm-row { display: flex; gap: 8px; margin-top: 14px; }
+
+  .error-msg { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; min-height: 18px; }
+
+  /* ── HISTORY ── */
+  .history-row {
+    display: grid;
+    grid-template-columns: 20px 1fr 1fr 1fr 1fr;
+    gap: 4px; padding: 8px 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 6px; align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .history-round { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-align: center; }
+  .history-score { text-align: center; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+  .history-score.neg { color: var(--green); }
+  .history-score.pos { color: var(--red); }
+  .history-tag {
+    grid-column: 1 / -1;
+    font-size: 10px; color: var(--muted);
+    padding-top: 2px;
+    text-align: center;
+  }
+  .history-row.manual-row { border-color: rgba(27,94,59,0.3); }
+
+  /* ── SETTINGS ── */
+  .settings-hand-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr;
+    gap: 8px; align-items: center; margin-bottom: 10px;
+  }
+  .settings-hand-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .settings-hand-row input { font-size: 13px; padding: 8px 10px; text-align: center; }
+  .settings-col-labels {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr;
+    gap: 8px; margin-bottom: 8px;
+  }
+  .settings-col-labels span { font-size: 10px; color: var(--muted); text-align: center; font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px; }
+
+  .rounds-row { display: flex; align-items: center; gap: 12px; }
+  .rounds-row label { font-size: 14px; color: var(--text); flex: 1; }
+  .rounds-row input { width: 80px; text-align: center; }
+
+  .settings-actions { display: flex; gap: 8px; margin-top: 6px; }
+
+  /* ── MANUAL ENTRY ── */
+  .manual-amount-row { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .manual-amount-row input { flex: 1; }
+  .amount-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* ── WINNER ── */
+  #winner-screen { text-align: center; padding: 30px 0; }
+  .winner-trophy { font-size: 56px; margin-bottom: 12px; }
+  .winner-name   { font-size: 30px; font-weight: 700; color: var(--accent); margin-bottom: 4px; font-family: 'Playfair Display', serif; }
+  .winner-score  { font-family: 'IBM Plex Mono', monospace; font-size: 16px; color: var(--muted); margin-bottom: 24px; }
+
+  .final-standings {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; text-align: start;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+  .standing-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .standing-row:last-child { border-bottom: none; }
+  .standing-pos { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--muted); width: 24px; }
+  .standing-pos.first { color: var(--accent); font-weight: 700; }
+  .standing-name { flex: 1; font-size: 16px; font-weight: 600; }
+  .standing-total { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 600; }
+  .standing-total.best { color: var(--green); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 20px 20px 32px;
+    width: 100%; max-width: 480px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+  }
+  .modal-title {
+    font-size: 16px; font-weight: 700; color: var(--text);
+    margin-bottom: 16px; text-align: center;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-modal-cancel {
+    flex: 1; background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 12px;
+    color: var(--muted); font-size: 14px;
+    font-family: 'Cairo', sans-serif; cursor: pointer;
+  }
+  .btn-modal-confirm {
+    flex: 1; background: var(--accent); border: none;
+    border-radius: 8px; padding: 12px;
+    color: #ffffff; font-size: 14px; font-weight: 700;
+    font-family: 'Cairo', sans-serif; cursor: pointer;
+  }
+
+  /* ── QUICK ENTRY BAR ── */
+  .quick-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px 22px;
+    z-index: 150;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+  }
+  .quick-bar.visible { display: block; }
+  .quick-bar-label {
+    font-size: 10px; color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .quick-players {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 6px;
+    margin-bottom: 8px;
+  }
+  .quick-player-btn {
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 7px; padding: 8px 4px;
+    color: var(--text); font-size: 12px; font-weight: 600;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .quick-player-btn:hover { border-color: var(--accent); }
+  .quick-player-btn.selected { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+  .quick-input-row { display: flex; gap: 8px; align-items: center; }
+  .quick-input-row input { flex: 1; padding: 10px 12px; font-size: 16px; text-align: center; }
+  .quick-apply-btn {
+    background: var(--accent); border: none;
+    border-radius: 8px; padding: 10px 18px;
+    color: #ffffff; font-size: 15px; font-weight: 700;
+    font-family: 'Cairo', sans-serif; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .quick-apply-btn:hover { background: var(--accent2); }
+
+  /* ── RESET CONFIRM BAR ── */
+  .reset-confirm {
+    display: none;
+    position: fixed;
+    top: 60px; left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 448px;
+    background: #fff5f3;
+    border: 1.5px solid var(--red);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    z-index: 300;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(190,58,42,0.15);
+  }
+  .reset-confirm.open { display: flex; }
+  .reset-confirm-text { flex: 1; font-size: 13px; color: var(--text); }
+  .reset-confirm-yes {
+    background: var(--red); border: none; border-radius: 6px;
+    padding: 7px 14px; color: #fff; font-size: 13px; font-weight: 700;
+    font-family: 'Cairo', sans-serif; cursor: pointer;
+  }
+  .reset-confirm-no {
+    background: transparent; border: 1.5px solid var(--border); border-radius: 6px;
+    padding: 7px 12px; color: var(--muted); font-size: 13px;
+    font-family: 'Cairo', sans-serif; cursor: pointer;
+  }
+
+  .quick-error { color: var(--red); font-size: 11px; text-align: center; margin-top: 5px; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">HAND <span class="header-suits">♠ ♥ ♦ ♣</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" id="lang-btn" onclick="toggleLang()">عربي</button>
+    <button class="icon-btn" id="reset-btn" onclick="confirmReset()" style="display:none;color:var(--red);border-color:var(--red);" data-t="resetGame">↺ Reset</button>
+    <button class="icon-btn" id="settings-btn" onclick="showScreen('settings')">⚙️</button>
+  </div>
+</header>
+
+
+<!-- ══════════════ RESET CONFIRM ══════════════ -->
+<div class="reset-confirm" id="reset-confirm">
+  <div class="reset-confirm-text" id="reset-confirm-text">Reset the game? All scores will be lost.</div>
+  <button class="reset-confirm-no" onclick="closeResetConfirm()">✕</button>
+  <button class="reset-confirm-yes" onclick="resetGame()" id="reset-confirm-yes">Reset</button>
+</div>
+
+<!-- ══════════════ SETUP ══════════════ -->
+<div id="setup-screen" class="screen active">
+  <div class="card">
+    <div class="card-title" data-t="players">Players</div>
+    <div class="player-input"><div class="player-num">1</div><input type="text" id="p1" data-ph="player1" placeholder="Player 1"></div>
+    <div class="player-input"><div class="player-num">2</div><input type="text" id="p2" data-ph="player2" placeholder="Player 2"></div>
+    <div class="player-input"><div class="player-num">3</div><input type="text" id="p3" data-ph="player3" placeholder="Player 3"></div>
+    <div class="player-input"><div class="player-num">4</div><input type="text" id="p4" data-ph="player4" placeholder="Player 4"></div>
+  </div>
+  <button class="btn-primary" onclick="startGame()" data-t="startGame">Start Game</button>
+</div>
+
+<!-- ══════════════ GAME ══════════════ -->
+<div id="game-screen" class="screen">
+
+  <div class="round-badge">
+    <div>
+      <div class="round-label" data-t="round">Round</div>
+      <div class="round-num" id="round-display">1 / 9</div>
+    </div>
+    <div class="round-dots" id="round-dots"></div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="scoreboard-header" id="score-header"></div>
+    <div class="scoreboard-row" id="score-row"></div>
+  </div>
+
+  <!-- Round entry card -->
+  <div class="card">
+    <div class="card-title" data-t="winner">Winner</div>
+    <div class="player-grid" id="winner-grid"></div>
+
+    <div class="divider"></div>
+
+    <div class="card-title" data-t="handType">Hand Type</div>
+    <div class="hand-grid" id="hand-grid"></div>
+
+    <div class="divider"></div>
+
+    <div class="card-title" data-t="howFinish">How did they finish?</div>
+    <div class="finish-row">
+      <button class="finish-btn" id="finish-deck" onclick="selectFinish('deck')" data-t="fromDeck">🃏 From Deck</button>
+      <button class="finish-btn" id="finish-player" onclick="selectFinish('player')" data-t="tookCard">👤 Took from Player</button>
+    </div>
+
+    <div id="victim-section" style="display:none; margin-top:14px;">
+      <div class="card-title" data-t="whichPlayer">Which player's card?</div>
+      <div class="player-grid" id="victim-grid"></div>
+    </div>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="confirm-row">
+      <button class="btn-undo" onclick="undoRound()" id="undo-btn" data-t="undo">↩ Undo</button>
+      <button class="btn-confirm" onclick="confirmRound()" data-t="confirmRound">Confirm →</button>
+    </div>
+  </div>
+
+
+  <!-- History -->
+  <div id="history-section" style="margin-top:14px;"></div>
+</div>
+
+<!-- ══════════════ SETTINGS ══════════════ -->
+<div id="settings-screen" class="screen">
+  <div class="card">
+    <div class="card-title" data-t="rounds">Number of Rounds</div>
+    <div class="rounds-row">
+      <label data-t="roundsLabel">Rounds per game</label>
+      <input type="number" id="setting-rounds" min="1" max="99" value="9">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-t="scoreSettings">Score Settings</div>
+    <div class="settings-col-labels">
+      <span></span>
+      <span data-t="colWin">WIN</span>
+      <span data-t="colLoser">LOSER</span>
+      <span data-t="colVictim">VICTIM</span>
+    </div>
+    <div id="settings-hand-rows"></div>
+  </div>
+
+  <div class="settings-actions">
+    <button class="btn-danger" onclick="resetSettings()" data-t="resetDefaults">Reset Defaults</button>
+    <button class="btn-primary" onclick="saveSettings()" data-t="saveSettings">Save Settings</button>
+  </div>
+  <div style="height:12px"></div>
+  <button class="btn-secondary" onclick="goBack()" data-t="back">← Back</button>
+</div>
+
+<!-- ══════════════ WINNER ══════════════ -->
+<div id="winner-screen" class="screen">
+  <div class="winner-trophy">🏆</div>
+  <div class="winner-name" id="winner-name-display"></div>
+  <div class="winner-score" id="winner-score-display"></div>
+  <div class="final-standings" id="final-standings"></div>
+  <button class="btn-secondary" onclick="resetGame()" data-t="newGame">New Game</button>
+</div>
+
+
+<!-- ══════════════ QUICK ENTRY BAR ══════════════ -->
+<div class="quick-bar" id="quick-bar">
+  <div class="quick-bar-label" data-t="quickLabel">Adjust Score</div>
+  <div class="quick-players" id="quick-players"></div>
+  <div class="quick-input-row">
+    <input type="number" id="quick-amount" data-ph="manualAmount" placeholder="+100 or -60">
+    <button class="quick-apply-btn" onclick="applyQuick()" data-t="apply">✓</button>
+  </div>
+  <div class="quick-error" id="quick-error"></div>
+</div>
+
+<!-- ══════════════ MANUAL MODAL ══════════════ -->
+<div class="modal-overlay" id="manual-modal">
+  <div class="modal">
+    <div class="modal-title" data-t="manualTitle">Manual Score Entry</div>
+    <div class="card-title" data-t="selectPlayer">Select Player</div>
+    <div class="player-grid" id="manual-player-grid"></div>
+    <div class="manual-amount-row">
+      <input type="number" id="manual-amount" data-ph="manualAmount" placeholder="Amount (e.g. 100 or -60)">
+    </div>
+    <p class="amount-hint" data-t="amountHint">Positive = penalty added · Negative = deduct</p>
+    <div class="error-msg" id="manual-error"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeManualModal()" data-t="cancel">Cancel</button>
+      <button class="btn-modal-confirm" onclick="confirmManual()" data-t="apply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   TRANSLATIONS
+═══════════════════════════════════════ */
+const T = {
+  en: {
+    players: 'Players', player1: 'Player 1', player2: 'Player 2', player3: 'Player 3', player4: 'Player 4',
+    startGame: 'Start Game', round: 'ROUND', winner: 'WINNER', handType: 'HAND TYPE',
+    howFinish: 'HOW DID THEY FINISH?', fromDeck: '🃏 From Deck', tookCard: '👤 Took from Player',
+    whichPlayer: "WHICH PLAYER'S CARD?", undo: '↩ Undo', confirmRound: 'Confirm →',
+    manualEntry: '+ Manual Entry', rounds: 'Number of Rounds', roundsLabel: 'Rounds per game',
+    scoreSettings: 'Score Settings', colWin: 'WIN', colLoser: 'LOSER', colVictim: 'VICTIM',
+    resetDefaults: 'Reset Defaults', saveSettings: 'Save Settings', back: '← Back',
+    newGame: 'New Game', manualTitle: 'Manual Score Entry', selectPlayer: 'SELECT PLAYER',
+    manualAmount: 'Amount (e.g. 100 or -60)', amountHint: 'Positive = penalty added · Negative = deduct',
+    cancel: 'Cancel', apply: 'Apply', settingsSaved: 'Settings saved!',
+    errWinner: 'Select the winner', errHand: 'Select the hand type',
+    errFinish: 'Select how they finished', errVictim: "Select which player's card was taken",
+    errPlayer: 'Select a player', errAmount: 'Enter an amount',
+    finalScore: 'Final score:', historyTitle: 'Round History',
+    langBtn: 'عربي', manual: 'Manual', quickLabel: 'Adjust Score', apply: 'Apply', resetGame: '↺ Reset',
+  },
+  ar: {
+    players: 'اللاعبون', player1: 'لاعب 1', player2: 'لاعب 2', player3: 'لاعب 3', player4: 'لاعب 4',
+    startGame: 'ابدأ اللعبة', round: 'الجولة', winner: 'الفائز', handType: 'نوع اليد',
+    howFinish: 'كيف انتهت؟', fromDeck: '🃏 من الكومة', tookCard: '👤 أخذ من لاعب',
+    whichPlayer: 'من أي لاعب؟', undo: 'تراجع ↩', confirmRound: 'تأكيد ←',
+    manualEntry: '+ إدخال يدوي', rounds: 'عدد الجولات', roundsLabel: 'جولات في اللعبة',
+    scoreSettings: 'إعدادات النقاط', colWin: 'فوز', colLoser: 'خسارة', colVictim: 'ضحية',
+    resetDefaults: 'إعادة الافتراضي', saveSettings: 'حفظ الإعدادات', back: 'رجوع →',
+    newGame: 'لعبة جديدة', manualTitle: 'إدخال نقاط يدوي', selectPlayer: 'اختر اللاعب',
+    manualAmount: 'المبلغ (مثل: 100 أو -60)', amountHint: 'موجب = عقوبة · سالب = خصم',
+    cancel: 'إلغاء', apply: 'تطبيق', settingsSaved: '!تم حفظ الإعدادات',
+    errWinner: 'اختر الفائز', errHand: 'اختر نوع اليد',
+    errFinish: 'اختر كيف انتهت', errVictim: 'اختر لاعب أُخذت ورقته',
+    errPlayer: 'اختر لاعباً', errAmount: 'أدخل المبلغ',
+    finalScore: ':النتيجة النهائية', historyTitle: 'سجل الجولات',
+    langBtn: 'English', manual: 'يدوي', quickLabel: 'تعديل النقاط', apply: 'تطبيق', resetGame: '↺ إعادة',
+  }
+};
+
+/* ═══════════════════════════════════════
+   DEFAULTS & STATE
+═══════════════════════════════════════ */
+const DEFAULT_HANDS = [
+  { id: 'normal',     labelEn: 'Normal',      labelAr: 'عادي',        win: -60,  loser: 200,  victim: 250  },
+  { id: 'joker',      labelEn: 'Joker',       labelAr: 'جوكر',        win: -120, loser: 400,  victim: 500  },
+  { id: 'color',      labelEn: 'Color',       labelAr: 'كولر',        win: -180, loser: 600,  victim: 750  },
+  { id: 'colorjoker', labelEn: 'Color Joker', labelAr: 'كولر جوكر',   win: -300, loser: 1000, victim: 1200 },
+  { id: 'super',      labelEn: 'Super',       labelAr: 'سوبر',        win: -360, loser: 1200, victim: 1600 },
+  { id: 'superjoker', labelEn: 'Super Joker', labelAr: 'سوبر جوكر',   win: -600, loser: 2000, victim: 3000 },
+];
+
+let lang = 'en';
+let handTypes = [];
+let totalRounds = 9;
+let players = [];
+let scores = [];
+let history = [];
+let currentRound = 1;
+let prevScreen = 'setup';
+
+let selectedWinner = null;
+let selectedHand   = null;
+let selectedFinish = null;
+let selectedVictim = null;
+let selectedManualPlayer = null;
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+
+/* ═══════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════ */
+function saveGameState() {
+  if (!players.length) return;
+  localStorage.setItem('hand_game', JSON.stringify({
+    players, scores, history, currentRound, totalRounds
+  }));
+}
+
+function loadGameState() {
+  try {
+    const saved = localStorage.getItem('hand_game');
+    if (!saved) return false;
+    const s = JSON.parse(saved);
+    if (!s.players || !s.players.length) return false;
+    players      = s.players;
+    scores       = s.scores;
+    history      = s.history;
+    currentRound = s.currentRound;
+    totalRounds  = s.totalRounds || totalRounds;
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearGameState() {
+  localStorage.removeItem('hand_game');
+}
+
+function init() {
+  loadSettings();
+  applyLang();
+  if (loadGameState()) {
+    showScreen('game');
+    buildDynamicUI();
+    updateUI();
+    document.getElementById('quick-bar').classList.add('visible');
+    buildQuickBar();
+    document.getElementById('reset-btn').style.display = 'block';
+  }
+}
+
+/* ═══════════════════════════════════════
+   LANG
+═══════════════════════════════════════ */
+function toggleLang() {
+  lang = lang === 'en' ? 'ar' : 'en';
+  applyLang();
+}
+
+function applyLang() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = lang === 'ar' ? 'rtl' : 'ltr';
+
+  // Update all data-t elements
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+
+  // Placeholders
+  document.querySelectorAll('[data-ph]').forEach(el => {
+    const key = el.getAttribute('data-ph');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+
+  // Lang button text
+  document.getElementById('lang-btn').textContent = t.langBtn;
+
+  // Re-render dynamic parts if game is active
+  if (players.length > 0) {
+    buildDynamicUI();
+    updateUI();
+    buildQuickBar();
+  }
+  buildSettingsUI();
+}
+
+function t(key) { return T[lang][key] || key; }
+
+/* ═══════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════ */
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('hand_settings');
+    if (saved) {
+      const s = JSON.parse(saved);
+      totalRounds = s.rounds || 9;
+      handTypes = s.hands || JSON.parse(JSON.stringify(DEFAULT_HANDS));
+    } else {
+      handTypes = JSON.parse(JSON.stringify(DEFAULT_HANDS));
+      totalRounds = 9;
+    }
+  } catch(e) {
+    handTypes = JSON.parse(JSON.stringify(DEFAULT_HANDS));
+    totalRounds = 9;
+  }
+}
+
+function saveSettings() {
+  totalRounds = parseInt(document.getElementById('setting-rounds').value) || 9;
+  handTypes.forEach(h => {
+    h.win    = parseInt(document.getElementById(`s-win-${h.id}`).value)    || h.win;
+    h.loser  = parseInt(document.getElementById(`s-loser-${h.id}`).value)  || h.loser;
+    h.victim = parseInt(document.getElementById(`s-victim-${h.id}`).value) || h.victim;
+  });
+  localStorage.setItem('hand_settings', JSON.stringify({ rounds: totalRounds, hands: handTypes }));
+  goBack();
+}
+
+function resetSettings() {
+  handTypes = JSON.parse(JSON.stringify(DEFAULT_HANDS));
+  totalRounds = 9;
+  localStorage.removeItem('hand_settings');
+  buildSettingsUI();
+}
+
+function buildSettingsUI() {
+  document.getElementById('setting-rounds').value = totalRounds;
+  const container = document.getElementById('settings-hand-rows');
+  container.innerHTML = handTypes.map(h => `
+    <div class="settings-hand-row">
+      <div class="settings-hand-label">${lang === 'ar' ? h.labelAr : h.labelEn}</div>
+      <input type="number" id="s-win-${h.id}"    value="${h.win}">
+      <input type="number" id="s-loser-${h.id}"  value="${h.loser}">
+      <input type="number" id="s-victim-${h.id}" value="${h.victim}">
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════ */
+function showScreen(name) {
+  prevScreen = document.querySelector('.screen.active')?.id.replace('-screen','') || 'setup';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`${name}-screen`).classList.add('active');
+  if (name === 'settings') buildSettingsUI();
+}
+
+function goBack() {
+  showScreen(prevScreen || 'setup');
+}
+
+/* ═══════════════════════════════════════
+   GAME FLOW
+═══════════════════════════════════════ */
+function startGame() {
+  players = ['p1','p2','p3','p4'].map((id, i) => {
+    const v = document.getElementById(id).value.trim();
+    return v || `${t('players')} ${i+1}`;
+  });
+  scores = [0,0,0,0];
+  history = [];
+  currentRound = 1;
+  showScreen('game');
+  buildDynamicUI();
+  updateUI();
+  document.getElementById('quick-bar').classList.add('visible');
+  buildQuickBar();
+  document.getElementById('reset-btn').style.display = 'block';
+}
+
+function buildDynamicUI() {
+  // Score header
+  document.getElementById('score-header').innerHTML =
+    players.map(n => `<span>${n}</span>`).join('');
+
+  // Winner grid
+  document.getElementById('winner-grid').innerHTML =
+    players.map((n,i) =>
+      `<button class="player-btn" id="winner-btn-${i}" onclick="selectWinner(${i})">${n}</button>`
+    ).join('');
+
+  // Hand grid
+  document.getElementById('hand-grid').innerHTML =
+    handTypes.map(h =>
+      `<button class="hand-btn" id="hand-btn-${h.id}" onclick="selectHand('${h.id}')">
+        <span class="hand-name">${lang==='ar' ? h.labelAr : h.labelEn}</span>
+        <span class="hand-score"><span style="color:var(--green);font-weight:700">${h.win}</span> / <span style="color:var(--red);font-weight:700">${h.loser}</span></span>
+      </button>`
+    ).join('');
+
+  // Round dots
+  document.getElementById('round-dots').innerHTML =
+    Array.from({length: totalRounds}, (_,i) =>
+      `<div class="dot" id="dot-${i+1}"></div>`
+    ).join('');
+
+  // Finish buttons text
+  document.getElementById('finish-deck').textContent   = t('fromDeck');
+  document.getElementById('finish-player').textContent = t('tookCard');
+}
+
+function updateUI() {
+  document.getElementById('round-display').textContent = `${currentRound} / ${totalRounds}`;
+
+  for (let i = 1; i <= totalRounds; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    if (!dot) continue;
+    dot.className = 'dot' + (i < currentRound ? ' done' : i === currentRound ? ' current' : '');
+  }
+
+  const maxScore = Math.max(...scores);
+  const showBikes = history.length > 0;
+  document.getElementById('score-row').innerHTML =
+    players.map((n,i) => {
+      const s = scores[i];
+      const cls = s < 0 ? 'negative' : s > 0 ? 'positive' : 'zero';
+      const isBiker = showBikes && s === maxScore;
+      return `<div class="score-cell">
+        <span class="bike-icon" style="visibility:${isBiker ? 'visible' : 'hidden'}">🚴</span>
+        <span class="score-name">${n}</span>
+        <span class="score-total ${cls}">${s}</span>
+      </div>`;
+    }).join('');
+
+  const undoBtn = document.getElementById('undo-btn');
+  undoBtn.style.opacity = history.length > 0 ? '1' : '0.3';
+  undoBtn.disabled = history.length === 0;
+
+  renderHistory();
+}
+
+/* ═══════════════════════════════════════
+   SELECTIONS
+═══════════════════════════════════════ */
+function selectWinner(idx) {
+  selectedWinner = idx;
+  players.forEach((_,i) =>
+    document.getElementById(`winner-btn-${i}`).classList.toggle('selected', i===idx)
+  );
+  if (selectedVictim === idx) { selectedVictim = null; updateVictimGrid(); }
+  clearError('error-msg');
+}
+
+function selectHand(id) {
+  selectedHand = id;
+  handTypes.forEach(h =>
+    document.getElementById(`hand-btn-${h.id}`).classList.toggle('selected', h.id===id)
+  );
+  clearError('error-msg');
+}
+
+function selectFinish(type) {
+  selectedFinish = type;
+  document.getElementById('finish-deck').classList.toggle('selected', type==='deck');
+  document.getElementById('finish-player').classList.toggle('selected', type==='player');
+  const vs = document.getElementById('victim-section');
+  if (type === 'player') { vs.style.display='block'; updateVictimGrid(); }
+  else { vs.style.display='none'; selectedVictim=null; }
+  clearError('error-msg');
+}
+
+function updateVictimGrid() {
+  document.getElementById('victim-grid').innerHTML =
+    players.map((n,i) => i===selectedWinner
+      ? `<button class="player-btn" disabled>${n}</button>`
+      : `<button class="player-btn ${selectedVictim===i?'selected':''}" onclick="selectVictim(${i})">${n}</button>`
+    ).join('');
+}
+
+function selectVictim(idx) {
+  selectedVictim = idx;
+  updateVictimGrid();
+  clearError('error-msg');
+}
+
+/* ═══════════════════════════════════════
+   CONFIRM ROUND
+═══════════════════════════════════════ */
+function confirmRound() {
+  if (selectedWinner===null)                           return showError('error-msg', t('errWinner'));
+  if (selectedHand===null)                             return showError('error-msg', t('errHand'));
+  if (selectedFinish===null)                           return showError('error-msg', t('errFinish'));
+  if (selectedFinish==='player'&&selectedVictim===null) return showError('error-msg', t('errVictim'));
+
+  const hand = handTypes.find(h => h.id===selectedHand);
+  const deltas = [0,0,0,0];
+  deltas[selectedWinner] = hand.win;
+  players.forEach((_,i) => {
+    if (i===selectedWinner) return;
+    deltas[i] = (selectedFinish==='player' && i===selectedVictim) ? hand.victim : hand.loser;
+  });
+
+  history.push({
+    round: currentRound,
+    type: 'round',
+    winner: selectedWinner,
+    hand: lang==='ar' ? hand.labelAr : hand.labelEn,
+    finish: selectedFinish,
+    victim: selectedVictim,
+    deltas: [...deltas],
+    scoresBefore: [...scores],
+  });
+
+  deltas.forEach((d,i) => scores[i]+=d);
+  currentRound++;
+  resetSelections();
+  updateUI();
+  saveGameState();
+  if (currentRound > totalRounds) setTimeout(showWinner, 300);
+}
+
+/* ═══════════════════════════════════════
+   UNDO
+═══════════════════════════════════════ */
+function undoRound() {
+  if (!history.length) return;
+  const last = history.pop();
+  scores = [...last.scoresBefore];
+  if (last.type === 'round') currentRound = last.round;
+  resetSelections();
+  updateUI();
+  saveGameState();
+}
+
+/* ═══════════════════════════════════════
+   MANUAL ENTRY
+═══════════════════════════════════════ */
+function openManualModal() {
+  selectedManualPlayer = null;
+  document.getElementById('manual-amount').value = '';
+  clearError('manual-error');
+
+  document.getElementById('manual-player-grid').innerHTML =
+    players.map((n,i) =>
+      `<button class="player-btn" id="mp-btn-${i}" onclick="selectManualPlayer(${i})">${n}</button>`
+    ).join('');
+
+  document.getElementById('manual-modal').classList.add('open');
+}
+
+function closeManualModal() {
+  document.getElementById('manual-modal').classList.remove('open');
+}
+
+function selectManualPlayer(idx) {
+  selectedManualPlayer = idx;
+  players.forEach((_,i) =>
+    document.getElementById(`mp-btn-${i}`).classList.toggle('selected', i===idx)
+  );
+  clearError('manual-error');
+}
+
+function confirmManual() {
+  if (selectedManualPlayer===null) return showError('manual-error', t('errPlayer'));
+  const amt = parseInt(document.getElementById('manual-amount').value);
+  if (isNaN(amt)) return showError('manual-error', t('errAmount'));
+
+  const deltas = [0,0,0,0];
+  deltas[selectedManualPlayer] = amt;
+
+  history.push({
+    round: currentRound,
+    type: 'manual',
+    player: selectedManualPlayer,
+    deltas: [...deltas],
+    scoresBefore: [...scores],
+  });
+
+  scores[selectedManualPlayer] += amt;
+  closeManualModal();
+  updateUI();
+}
+
+/* ═══════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════ */
+function renderHistory() {
+  const el = document.getElementById('history-section');
+  if (!history.length) { el.innerHTML=''; return; }
+
+  const header = `<div class="history-row">
+    <div class="history-round">#</div>
+    ${players.map(n=>`<div class="history-score" style="font-size:10px;color:var(--muted)">${n}</div>`).join('')}
+  </div>`;
+
+  const rows = [...history].reverse().map(h => {
+    const cells = h.deltas.map((d,i)=>
+      `<div class="history-score ${d<0?'neg':d>0?'pos':''}">${d!==0?(d>0?'+':'')+d:'—'}</div>`
+    ).join('');
+    const tag = h.type==='manual'
+      ? `<div class="history-tag">${t('manual')}</div>`
+      : '';
+    return `<div class="history-row ${h.type==='manual'?'manual-row':''}">
+      <div class="history-round">${h.round}</div>
+      ${cells}
+      ${tag}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + rows;
+}
+
+/* ═══════════════════════════════════════
+   WINNER
+═══════════════════════════════════════ */
+function showWinner() {
+  showScreen('winner');
+  const sorted = players.map((n,i)=>({name:n,score:scores[i]})).sort((a,b)=>a.score-b.score);
+  const winner = sorted[0];
+  document.getElementById('winner-name-display').textContent = winner.name;
+  document.getElementById('winner-score-display').textContent = `${t('finalScore')} ${winner.score}`;
+
+  const positions = ['🥇','🥈','🥉','4️⃣'];
+  document.getElementById('final-standings').innerHTML =
+    sorted.map((p,rank)=>`
+      <div class="standing-row">
+        <div class="standing-pos ${rank===0?'first':''}">${positions[rank]}</div>
+        <div class="standing-name">${p.name}</div>
+        <div class="standing-total ${rank===0?'best':''}">${p.score}</div>
+      </div>`
+    ).join('');
+}
+
+
+function confirmReset() {
+  const msgEn = 'Reset the game? All scores will be lost.';
+  const msgAr = 'إعادة تعيين؟ سيتم حذف جميع النقاط.';
+  const btnEn = 'Reset'; const btnAr = 'إعادة';
+  document.getElementById('reset-confirm-text').textContent = lang === 'ar' ? msgAr : msgEn;
+  document.getElementById('reset-confirm-yes').textContent  = lang === 'ar' ? btnAr : btnEn;
+  document.getElementById('reset-confirm').classList.add('open');
+}
+
+function closeResetConfirm() {
+  document.getElementById('reset-confirm').classList.remove('open');
+}
+
+function resetGame() {
+  closeResetConfirm();
+  players=[]; scores=[]; history=[]; currentRound=1;
+  resetSelections();
+  clearGameState();
+  document.getElementById('quick-bar').classList.remove('visible');
+  document.getElementById('reset-btn').style.display = 'none';
+  showScreen('setup');
+}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+function resetSelections() {
+  selectedWinner=null; selectedHand=null; selectedFinish=null; selectedVictim=null;
+  players.forEach((_,i)=>document.getElementById(`winner-btn-${i}`)?.classList.remove('selected'));
+  handTypes.forEach(h=>document.getElementById(`hand-btn-${h.id}`)?.classList.remove('selected'));
+  document.getElementById('finish-deck')?.classList.remove('selected');
+  document.getElementById('finish-player')?.classList.remove('selected');
+  const vs = document.getElementById('victim-section');
+  if (vs) vs.style.display='none';
+  clearError('error-msg');
+}
+
+function showError(id, msg) { document.getElementById(id).textContent = msg; }
+function clearError(id)     { document.getElementById(id).textContent = ''; }
+
+
+/* ═══════════════════════════════════════
+   QUICK ENTRY BAR
+═══════════════════════════════════════ */
+let quickPlayer = null;
+
+function buildQuickBar() {
+  quickPlayer = null;
+  document.getElementById('quick-amount').value = '';
+  document.getElementById('quick-players').innerHTML =
+    players.map((n,i) =>
+      `<button class="quick-player-btn" id="qp-${i}" onclick="selectQuickPlayer(${i})">${n}</button>`
+    ).join('');
+}
+
+function selectQuickPlayer(idx) {
+  quickPlayer = idx;
+  players.forEach((_,i) =>
+    document.getElementById(`qp-${i}`).classList.toggle('selected', i===idx)
+  );
+  document.getElementById('quick-error').textContent = '';
+}
+
+function applyQuick() {
+  if (quickPlayer === null) {
+    document.getElementById('quick-error').textContent = t('errPlayer');
+    return;
+  }
+  const amt = parseInt(document.getElementById('quick-amount').value);
+  if (isNaN(amt) || amt === 0) {
+    document.getElementById('quick-error').textContent = t('errAmount');
+    return;
+  }
+
+  const deltas = [0,0,0,0];
+  deltas[quickPlayer] = amt;
+
+  history.push({
+    round: currentRound,
+    type: 'manual',
+    player: quickPlayer,
+    deltas: [...deltas],
+    scoresBefore: [...scores],
+  });
+
+  scores[quickPlayer] += amt;
+
+  // Reset input but keep player selected for quick consecutive entries
+  document.getElementById('quick-amount').value = '';
+  document.getElementById('quick-error').textContent = '';
+  updateUI();
+  saveGameState();
+}
+
+// Close modal on overlay click
+document.getElementById('manual-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeManualModal();
+});
+
+init();
+</script>
+</body>
+</html>
