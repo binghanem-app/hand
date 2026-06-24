@@ -55,12 +55,17 @@ round history, undo, and full English & Arabic support. Everything works offline
 
 ## Support URL
 ```
-https://binghanem-app.github.io/hand/
+https://hand.binghanem.com/
 ```
 
-## Privacy Policy URL
+## Privacy Policy URL (English localization)
 ```
-https://binghanem-app.github.io/hand/privacy.html
+https://hand.binghanem.com/privacy.html
+```
+
+## Privacy Policy URL (Arabic localization)
+```
+https://hand.binghanem.com/privacy-ar.html
 ```
 
 ## App Privacy (the "nutrition label" questionnaire)
