@@ -915,14 +915,20 @@ function buildSettingsUI() {
    SCREENS
 ═══════════════════════════════════════ */
 function showScreen(name) {
-  prevScreen = document.querySelector('.screen.active')?.id.replace('-screen','') || 'setup';
+  // Remember the last screen we came FROM, but never settings itself —
+  // otherwise tapping the (always-visible) gear while in settings traps Back.
+  const current = document.querySelector('.screen.active')?.id.replace('-screen','');
+  if (current && current !== 'settings') prevScreen = current;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`${name}-screen`).classList.add('active');
   if (name === 'settings') buildSettingsUI();
 }
 
 function goBack() {
-  showScreen(prevScreen || 'setup');
+  // Always return to a real screen: the live game if one exists, else setup.
+  // (prevScreen is a fallback and is never 'settings'.)
+  if (players.length) return showScreen('game');
+  showScreen(prevScreen && prevScreen !== 'settings' ? prevScreen : 'setup');
 }
 
 /* ═══════════════════════════════════════
