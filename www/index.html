@@ -47,6 +47,11 @@
   /* Allow text entry/selection inside inputs */
   input { -webkit-user-select: text; user-select: text; }
 
+  /* iOS renders native <button> chrome that ignores the button's own text
+     color — so a selected player button turned green but its name vanished.
+     Reset the appearance so our color/background always apply. */
+  button { -webkit-appearance: none; appearance: none; }
+
   body::before {
     content: '♠  ♥  ♦  ♣';
     position: fixed;
