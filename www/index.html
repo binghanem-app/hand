@@ -980,11 +980,15 @@ function updateUI() {
   }
 
   const maxScore = Math.max(...scores);
+  const minScore = Math.min(...scores);
   const showBikes = history.length > 0;
   document.getElementById('score-row').innerHTML =
     players.map((n,i) => {
       const s = scores[i];
-      const cls = s < 0 ? 'negative' : s > 0 ? 'positive' : 'zero';
+      // Lowest score = the leader in Hand, so always show it green (even if positive).
+      // Otherwise fall back to sign-based colouring.
+      const cls = (showBikes && s === minScore) ? 'negative'
+                : s < 0 ? 'negative' : s > 0 ? 'positive' : 'zero';
       const isBiker = showBikes && s === maxScore;
       return `<div class="score-cell">
         <span class="bike-icon" style="visibility:${isBiker ? 'visible' : 'hidden'}">🚴</span>
