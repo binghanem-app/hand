@@ -563,7 +563,7 @@
   <div class="header-actions">
     <button class="icon-btn" id="lang-btn" onclick="toggleLang()">عربي</button>
     <button class="icon-btn" id="reset-btn" onclick="confirmReset()" style="display:none;color:var(--red);border-color:var(--red);" data-t="resetGame">↺ Reset</button>
-    <button class="icon-btn" id="settings-btn" onclick="showScreen('settings')">⚙️</button>
+    <button class="icon-btn" id="settings-btn" onclick="toggleSettings()">⚙️</button>
   </div>
 </header>
 
@@ -929,6 +929,12 @@ function goBack() {
   // (prevScreen is a fallback and is never 'settings'.)
   if (players.length) return showScreen('game');
   showScreen(prevScreen && prevScreen !== 'settings' ? prevScreen : 'setup');
+}
+
+// The gear toggles settings: tap to open, tap again to go back.
+function toggleSettings() {
+  if (document.getElementById('settings-screen').classList.contains('active')) goBack();
+  else showScreen('settings');
 }
 
 /* ═══════════════════════════════════════
