@@ -331,6 +331,12 @@
   .player-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .player-btn.selected { background: var(--accent); color: #ffffff; border-color: var(--accent); }
   .player-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* iOS hides a <button>'s own text on a coloured background, so the player
+     name is wrapped in a .pn span (like the hand buttons, which work). Colour
+     the span, not the button. */
+  .player-btn .pn, .quick-player-btn .pn { color: var(--text); }
+  .player-btn:hover:not(:disabled) .pn { color: var(--accent); }
+  .player-btn.selected .pn, .quick-player-btn.selected .pn { color: #ffffff; }
 
   .hand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
@@ -964,7 +970,7 @@ function buildDynamicUI() {
   // Winner grid
   document.getElementById('winner-grid').innerHTML =
     players.map((n,i) =>
-      `<button class="player-btn" id="winner-btn-${i}" onclick="selectWinner(${i})">${n}</button>`
+      `<button class="player-btn" id="winner-btn-${i}" onclick="selectWinner(${i})"><span class="pn">${n}</span></button>`
     ).join('');
 
   // Hand grid
@@ -1054,8 +1060,8 @@ function selectFinish(type) {
 function updateVictimGrid() {
   document.getElementById('victim-grid').innerHTML =
     players.map((n,i) => i===selectedWinner
-      ? `<button class="player-btn" disabled>${n}</button>`
-      : `<button class="player-btn ${selectedVictim===i?'selected':''}" onclick="selectVictim(${i})">${n}</button>`
+      ? `<button class="player-btn" disabled><span class="pn">${n}</span></button>`
+      : `<button class="player-btn ${selectedVictim===i?'selected':''}" onclick="selectVictim(${i})"><span class="pn">${n}</span></button>`
     ).join('');
 }
 
@@ -1124,7 +1130,7 @@ function openManualModal() {
 
   document.getElementById('manual-player-grid').innerHTML =
     players.map((n,i) =>
-      `<button class="player-btn" id="mp-btn-${i}" onclick="selectManualPlayer(${i})">${n}</button>`
+      `<button class="player-btn" id="mp-btn-${i}" onclick="selectManualPlayer(${i})"><span class="pn">${n}</span></button>`
     ).join('');
 
   document.getElementById('manual-modal').classList.add('open');
@@ -1265,7 +1271,7 @@ function buildQuickBar() {
   document.getElementById('quick-amount').value = '';
   document.getElementById('quick-players').innerHTML =
     players.map((n,i) =>
-      `<button class="quick-player-btn" id="qp-${i}" onclick="selectQuickPlayer(${i})">${n}</button>`
+      `<button class="quick-player-btn" id="qp-${i}" onclick="selectQuickPlayer(${i})"><span class="pn">${n}</span></button>`
     ).join('');
 }
 
