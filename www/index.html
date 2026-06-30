@@ -27,21 +27,31 @@
     --radius:  10px;
   }
 
-  html { -webkit-text-size-adjust: 100%; background: var(--bg); overscroll-behavior: none; }
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); height: 100%; }
 
   body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Cairo', sans-serif;
-    min-height: 100vh;
-    padding: 0 16px 40px;
-    max-width: 480px;
-    margin: 0 auto;
+    height: 100%;
+    overflow: hidden;          /* document never scrolls/bounces */
+    margin: 0;
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+  }
+
+  /* Inner scroll container — scrolling lives here, not on the document, so the
+     iOS elastic bounce (and the top "leak flash") is gone. */
+  .app {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
   }
 
   /* Allow text entry/selection inside inputs */
@@ -573,6 +583,7 @@
 </style>
 </head>
 <body>
+<div class="app">
 
 <header>
   <div class="header-title">HAND <span class="header-suits"><span class="s-d">&#9824;&#xFE0E;</span> <span class="s-r">&#9829;&#xFE0E;</span> <span class="s-r">&#9830;&#xFE0E;</span> <span class="s-d">&#9827;&#xFE0E;</span></span></div>
@@ -722,6 +733,8 @@
     </div>
   </div>
 </div>
+
+</div><!-- /.app -->
 
 <script>
 /* ═══════════════════════════════════════
