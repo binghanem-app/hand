@@ -27,7 +27,7 @@
     --radius:  10px;
   }
 
-  html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); overscroll-behavior: none; }
 
   body {
     background: var(--bg);
@@ -41,7 +41,7 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
-    overscroll-behavior-y: none;
+    overscroll-behavior: none;
   }
 
   /* Allow text entry/selection inside inputs */
@@ -74,10 +74,7 @@
     padding: calc(18px + env(safe-area-inset-top)) 0 14px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 20px;
-    position: sticky;
-    top: 0;
     background: var(--bg);
-    z-index: 100;
   }
 
   .header-title {
