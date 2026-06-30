@@ -79,6 +79,16 @@
     top: 0;
     z-index: 100;
   }
+  /* Cream cover above the sticky header so scrolling content never shows
+     through in the status-bar / safe-area strip on iOS. */
+  header::before {
+    content: '';
+    position: absolute;
+    left: -16px; right: -16px;
+    bottom: 100%;
+    height: calc(env(safe-area-inset-top) + 60px);
+    background: var(--bg);
+  }
 
   .header-title {
     font-family: 'Playfair Display', serif;
