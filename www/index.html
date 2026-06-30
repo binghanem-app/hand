@@ -88,10 +88,11 @@
     gap: 8px;
   }
   .header-suits {
-    font-size: 13px;
-    color: var(--muted);
+    font-size: 19px;
     letter-spacing: 3px;
   }
+  .header-suits .s-r { color: var(--red); }
+  .header-suits .s-d { color: #1a1612; }
 
   .header-actions { display: flex; gap: 8px; align-items: center; }
 
@@ -562,7 +563,7 @@
 <body>
 
 <header>
-  <div class="header-title">HAND <span class="header-suits">♠ ♥ ♦ ♣</span></div>
+  <div class="header-title">HAND <span class="header-suits"><span class="s-d">&#9824;&#xFE0E;</span> <span class="s-r">&#9829;&#xFE0E;</span> <span class="s-r">&#9830;&#xFE0E;</span> <span class="s-d">&#9827;&#xFE0E;</span></span></div>
   <div class="header-actions">
     <button class="icon-btn" id="lang-btn" onclick="toggleLang()">عربي</button>
     <button class="icon-btn" id="reset-btn" onclick="confirmReset()" style="display:none;color:var(--red);border-color:var(--red);" data-t="resetGame">↺ Reset</button>
