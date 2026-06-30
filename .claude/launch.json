@@ -1,11 +1,11 @@
 {
   "version": "0.0.1",
+  "autoPort": true,
   "configurations": [
     {
       "name": "hand-www",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "www", "-l", "4173"],
-      "port": 4173
+      "runtimeArgs": ["-y", "serve", "www"]
     }
   ]
 }
