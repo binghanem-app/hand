@@ -388,6 +388,28 @@
 
   .error-msg { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; min-height: 18px; }
 
+  /* ── NOZOOL ── */
+  .nozool-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .nozool-toggle-text .nz-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .nozool-toggle-text .nz-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle {
+    width: 48px; height: 28px; border-radius: 20px; background: var(--border);
+    border: none; position: relative; flex-shrink: 0; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+    border-radius: 50%; background: #fff; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { left: 23px; }
+  .nozool-input-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 8px;
+    background: rgba(27,94,59,0.05); border: 1px solid rgba(27,94,59,0.2);
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .nozool-name { flex: 1; font-size: 14px; font-weight: 600; color: var(--accent); }
+  .nozool-input-row input { width: 84px; text-align: center; }
+
   /* ── HISTORY ── */
   .history-row {
     display: grid;
@@ -611,6 +633,15 @@
     <div class="player-input"><div class="player-num">3</div><input type="text" id="p3" data-ph="player3" placeholder="Player 3"></div>
     <div class="player-input"><div class="player-num">4</div><input type="text" id="p4" data-ph="player4" placeholder="Player 4"></div>
   </div>
+  <div class="card">
+    <div class="nozool-toggle-row">
+      <div class="nozool-toggle-text">
+        <div class="nz-title" data-t="nozoolMode">Nozool (نزول)</div>
+        <div class="nz-sub" data-t="nozoolHint">Let a player go down for reduced points</div>
+      </div>
+      <button class="toggle" id="nozool-toggle" onclick="toggleNozool()" aria-label="Nozool mode"></button>
+    </div>
+  </div>
   <button class="btn-primary" onclick="startGame()" data-t="startGame">Start Game</button>
 </div>
 
@@ -651,6 +682,14 @@
     <div id="victim-section" style="display:none; margin-top:14px;">
       <div class="card-title" data-t="whichPlayer">Which player's card?</div>
       <div class="player-grid" id="victim-grid"></div>
+    </div>
+
+    <div id="nozool-section" style="display:none;">
+      <div class="divider"></div>
+      <div class="card-title" data-t="nozoolTitle">Nozool (Cards Down)</div>
+      <div class="nz-sub" style="margin-bottom:10px;" data-t="nozoolSub">Tap who put their cards down, then type their hand points.</div>
+      <div class="player-grid" id="nozool-grid"></div>
+      <div id="nozool-inputs"></div>
     </div>
 
     <div class="error-msg" id="error-msg"></div>
@@ -757,6 +796,9 @@ const T = {
     errPlayer: 'Select a player', errAmount: 'Enter an amount',
     finalScore: 'Final score:', historyTitle: 'Round History',
     langBtn: 'عربي', manual: 'Manual', quickLabel: 'Adjust Score', apply: 'Apply', resetGame: '↺ Reset',
+    nozoolMode: 'Nozool (نزول)', nozoolHint: 'Let a player go down for reduced points',
+    nozoolTitle: 'Nozool (Cards Down)', nozoolSub: 'Tap who put their cards down, then type their hand points.',
+    handPoints: 'Hand points',
   },
   ar: {
     players: 'اللاعبون', player1: 'لاعب 1', player2: 'لاعب 2', player3: 'لاعب 3', player4: 'لاعب 4',
@@ -774,6 +816,9 @@ const T = {
     errPlayer: 'اختر لاعباً', errAmount: 'أدخل المبلغ',
     finalScore: ':النتيجة النهائية', historyTitle: 'سجل الجولات',
     langBtn: 'English', manual: 'يدوي', quickLabel: 'تعديل النقاط', apply: 'تطبيق', resetGame: '↺ إعادة',
+    nozoolMode: 'وضع النزول', nozoolHint: 'اسمح للاعب بالنزول مقابل نقاط أقل',
+    nozoolTitle: 'نزول', nozoolSub: 'اختر من نزل، ثم أدخل نقاط يده.',
+    handPoints: 'نقاط اليد',
   }
 };
 
@@ -804,6 +849,9 @@ let selectedFinish = null;
 let selectedVictim = null;
 let selectedManualPlayer = null;
 
+let nozoolEnabled = false;   // game-level toggle (set on setup screen)
+let nozoolPlayers = {};      // { playerIndex: handPointsString } for the current round
+
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
@@ -814,7 +862,7 @@ let selectedManualPlayer = null;
 function saveGameState() {
   if (!players.length) return;
   localStorage.setItem('hand_game', JSON.stringify({
-    players, scores, history, currentRound, totalRounds
+    players, scores, history, currentRound, totalRounds, nozoolEnabled
   }));
 }
 
@@ -829,6 +877,7 @@ function loadGameState() {
     history      = s.history;
     currentRound = s.currentRound;
     totalRounds  = s.totalRounds || totalRounds;
+    nozoolEnabled = !!s.nozoolEnabled;
     return true;
   } catch(e) { return false; }
 }
@@ -839,6 +888,7 @@ function clearGameState() {
 
 function init() {
   loadSettings();
+  nozoolEnabled = localStorage.getItem('hand_nozool') === '1';
   applyLang();
   if (loadGameState()) {
     showScreen('game');
@@ -848,6 +898,14 @@ function init() {
     buildQuickBar();
     document.getElementById('reset-btn').style.display = 'block';
   }
+  document.getElementById('nozool-toggle').classList.toggle('on', nozoolEnabled);
+}
+
+// Setup-screen toggle for نزول mode
+function toggleNozool() {
+  nozoolEnabled = !nozoolEnabled;
+  localStorage.setItem('hand_nozool', nozoolEnabled ? '1' : '0');
+  document.getElementById('nozool-toggle').classList.toggle('on', nozoolEnabled);
 }
 
 /* ═══════════════════════════════════════
@@ -977,6 +1035,7 @@ function startGame() {
   scores = [0,0,0,0];
   history = [];
   currentRound = 1;
+  nozoolPlayers = {};
   showScreen('game');
   buildDynamicUI();
   updateUI();
@@ -1014,6 +1073,10 @@ function buildDynamicUI() {
   // Finish buttons text
   document.getElementById('finish-deck').textContent   = t('fromDeck');
   document.getElementById('finish-player').textContent = t('tookCard');
+
+  // Nozool section
+  document.getElementById('nozool-section').style.display = nozoolEnabled ? 'block' : 'none';
+  if (nozoolEnabled) buildNozoolGrid();
 }
 
 function updateUI() {
@@ -1059,6 +1122,8 @@ function selectWinner(idx) {
     document.getElementById(`winner-btn-${i}`).classList.toggle('selected', i===idx)
   );
   if (selectedVictim === idx) { selectedVictim = null; updateVictimGrid(); }
+  // The winner can't be نزول — drop them and rebuild the grid.
+  if (nozoolEnabled) { delete nozoolPlayers[idx]; buildNozoolGrid(); }
   clearError('error-msg');
 }
 
@@ -1094,6 +1159,36 @@ function selectVictim(idx) {
   clearError('error-msg');
 }
 
+/* ── NOZOOL (went down) ── */
+function buildNozoolGrid() {
+  document.getElementById('nozool-grid').innerHTML =
+    players.map((n,i) => i===selectedWinner
+      ? `<button class="player-btn" disabled><span class="pn">${n}</span></button>`
+      : `<button class="player-btn ${(i in nozoolPlayers)?'selected':''}" onclick="toggleNozoolPlayer(${i})"><span class="pn">${n}</span></button>`
+    ).join('');
+  renderNozoolInputs();
+}
+
+function toggleNozoolPlayer(idx) {
+  if (idx in nozoolPlayers) delete nozoolPlayers[idx];
+  else nozoolPlayers[idx] = '';
+  buildNozoolGrid();
+  clearError('error-msg');
+}
+
+function renderNozoolInputs() {
+  document.getElementById('nozool-inputs').innerHTML =
+    Object.keys(nozoolPlayers).map(i => `
+      <div class="nozool-input-row">
+        <span class="nozool-name">${players[i]}</span>
+        <input type="number" inputmode="numeric" id="nozool-pts-${i}"
+               value="${nozoolPlayers[i]}" placeholder="${t('handPoints')}"
+               oninput="setNozoolPts(${i}, this.value)">
+      </div>`).join('');
+}
+
+function setNozoolPts(idx, val) { nozoolPlayers[idx] = val; }
+
 /* ═══════════════════════════════════════
    CONFIRM ROUND
 ═══════════════════════════════════════ */
@@ -1104,11 +1199,19 @@ function confirmRound() {
   if (selectedFinish==='player'&&selectedVictim===null) return showError('error-msg', t('errVictim'));
 
   const hand = handTypes.find(h => h.id===selectedHand);
+  const surcharge = hand.victim - hand.loser;   // the "extra" a victim pays over a normal loser
   const deltas = [0,0,0,0];
   deltas[selectedWinner] = hand.win;
   players.forEach((_,i) => {
     if (i===selectedWinner) return;
-    deltas[i] = (selectedFinish==='player' && i===selectedVictim) ? hand.victim : hand.loser;
+    const isVictim = (selectedFinish==='player' && i===selectedVictim);
+    if (nozoolEnabled && (i in nozoolPlayers)) {
+      // نزول player: pays only their hand points (+ the victim extra if they were the victim)
+      const pts = parseInt(nozoolPlayers[i]) || 0;
+      deltas[i] = pts + (isVictim ? surcharge : 0);
+    } else {
+      deltas[i] = isVictim ? hand.victim : hand.loser;
+    }
   });
 
   history.push({
@@ -1118,6 +1221,7 @@ function confirmRound() {
     hand: lang==='ar' ? hand.labelAr : hand.labelEn,
     finish: selectedFinish,
     victim: selectedVictim,
+    nozool: { ...nozoolPlayers },
     deltas: [...deltas],
     scoresBefore: [...scores],
   });
@@ -1277,6 +1381,8 @@ function resetSelections() {
   document.getElementById('finish-player')?.classList.remove('selected');
   const vs = document.getElementById('victim-section');
   if (vs) vs.style.display='none';
+  nozoolPlayers = {};
+  if (nozoolEnabled && document.getElementById('nozool-grid')) buildNozoolGrid();
   clearError('error-msg');
 }
 
